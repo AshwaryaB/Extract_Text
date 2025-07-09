@@ -1,12 +1,10 @@
 import fitz    # from pymupdf library
-import re
 from reportlab.pdfgen import canvas   # canvas from reportlab 
 from reportlab.lib.pagesizes import A4
 import textwrap
-from deep_translator import GoogleTranslator
 
 
-
+# defining the heading detection algorithm
 def is_heading(line):
     line_clean = line.strip()
     return (
@@ -15,10 +13,11 @@ def is_heading(line):
         not any(char.isdigit() for char in line_clean)
     )
 
-
 def heading_contains_keywords(heading, keywords):
     return heading.strip().lower() in [kw.lower() for kw in keywords]
 
+
+# defining the text extraction algorithm 
 def extract_eligibility_criteria(pdf_path):
     start_keywords = ['qualification', 'eligibility', 'mandatory eligibility criteria', 
                       'financial criteria', 'bid capacity criteria', 'participate for bidding']
@@ -31,7 +30,7 @@ def extract_eligibility_criteria(pdf_path):
     all_lines = []
     extracted_text = ""
 
-    # First pass: collecting all lines & check for headings
+    # First pass: collecting all lines & checking for headings
     found_heading = False
     for page in doc:
         page_lines = page.get_text().split('\n')
@@ -56,11 +55,12 @@ def extract_eligibility_criteria(pdf_path):
             if collecting:
                 extracted_text += stripped + "\n"
     else:
-        # 3️⃣ Fallback to line-based extraction
+        # extract based on line-based extraction
         start_flag = False
         for line in all_lines:
             cleaned_line = line.strip()
 
+            # extraction starting condition 
             if not start_flag:
                 if any(kw in cleaned_line.lower() for kw in start_keywords):
                     if any(phrase in cleaned_line.lower() for phrase in irrelevant_phrases):
@@ -70,6 +70,7 @@ def extract_eligibility_criteria(pdf_path):
                     extracted_text += cleaned_line + '\n'
                 continue
 
+            # stopping condition 
             if start_flag:
                 if any(kw in cleaned_line.lower() for kw in stop_keywords):
                     start_flag = False
@@ -83,8 +84,7 @@ def extract_eligibility_criteria(pdf_path):
     return extracted_text.strip()
 
 
-
-
+# defining the PDF saving algorithm
 def save_pdf(text, output_pdf_path):
     c = canvas.Canvas(output_pdf_path, pagesize=A4)
     width, height = A4
@@ -112,8 +112,3 @@ def save_pdf(text, output_pdf_path):
 
     c.save()
 
-
-'''
-text1 = extract_eligibility_criteria('TenderDocument1.pdf')
-output_pdf_path1 = 'outputPDF1.pdf'
-'''
